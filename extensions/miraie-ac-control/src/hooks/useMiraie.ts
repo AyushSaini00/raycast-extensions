@@ -3,11 +3,6 @@ import { getPreferenceValues, showToast, Toast, LocalStorage } from "@raycast/ap
 import { MirAIeHub, MirAIeBroker, Device } from "../lib/miraie";
 import type { DeviceJSON } from "../lib/miraie/device";
 
-interface Preferences {
-  username: string;
-  password: string;
-}
-
 interface MirAIeState {
   hub: MirAIeHub | null;
   broker: MirAIeBroker | null;

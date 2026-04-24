@@ -1,4 +1,3 @@
-import axios from "axios";
 import { addDays, endOfWeek, format, startOfWeek } from "date-fns";
 import { MirAIeBroker } from "./broker";
 import { User } from "./user";
@@ -51,7 +50,10 @@ type HomeSpaceResponse = {
 
 type HomeResponse = {
   homeId: string;
-  spaces: HomeSpaceResponse[];
+  homeName?: string;
+  address?: string;
+  spaces?: HomeSpaceResponse[];
+  rooms?: HomeSpaceResponse[];
 };
 
 type DeviceStatusResponse = {
@@ -112,6 +114,8 @@ export class MirAIeHub {
     broker.setTopics(topics);
 
     if (!broker.isConnected()) {
+      // Note: MirAIe MQTT broker authenticates with the Home ID as the username
+      // when using the dynamic Access Token as the password.
       const task = broker.connect(this.home.id, this.user.accessToken, this.getToken.bind(this));
       this.backgroundTasks.add(task);
     }
@@ -179,12 +183,15 @@ export class MirAIeHub {
     const existingDevices = new Map(this.home?.devices.map((device) => [device.id, device]) ?? []);
     const devices: Device[] = [];
 
-    for (const space of jsonData.spaces) {
-      for (const device of space.devices) {
+    const spaces = jsonData.spaces ?? jsonData.rooms ?? [];
+
+    for (const space of spaces) {
+      for (const device of space.devices ?? []) {
         const name = String(device.deviceName).toLowerCase().replace(/ /g, "-");
-        const controlTopic = String(device.topic[0]) + "/control";
-        const statusTopic = String(device.topic[0]) + "/status";
-        const connectionStatusTopic = String(device.topic[0]) + "/connectionStatus";
+        const topicPrefix = device.topic?.[0] ?? "unknown";
+        const controlTopic = topicPrefix + "/control";
+        const statusTopic = topicPrefix + "/status";
+        const connectionStatusTopic = topicPrefix + "/connectionStatus";
 
         const item =
           existingDevices.get(device.deviceId) ??
@@ -210,6 +217,11 @@ export class MirAIeHub {
       if (!devices.some((device) => device.id === existingDevice.id)) {
         existingDevice.destroy();
       }
+    }
+
+    if (devices.length === 0) {
+      this.home = new Home(jsonData.homeId, devices);
+      return this.home;
     }
 
     const deviceIds = devices.map((device) => device.id).join(",");
@@ -242,6 +254,11 @@ export class MirAIeHub {
       headers: this.buildHeaders(),
     });
     const resp = (await response.json()) as HomeResponse[];
+
+    if (!resp || resp.length === 0) {
+      throw new Error("No homes found. Please ensure you have configured at least one home in the MirAIe mobile app.");
+    }
+
     await this.processHomeDetails(resp[0]);
   }
 
@@ -369,8 +386,8 @@ export class MirAIeHub {
       .replace("{toDate}", toDate);
 
     try {
-      const { data } = await axios(url, { headers: this.buildHeaders() });
-      return data;
+      const response = await fetch(url, { headers: this.buildHeaders() });
+      return (await response.json()) as EnergyConsumptionEntry[];
     } catch (err) {
       console.error("Failed to fetch MirAIe energy details", err);
     }
