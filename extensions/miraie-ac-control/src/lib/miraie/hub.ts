@@ -130,8 +130,11 @@ export class MirAIeHub {
     try {
       await this.authenticate(this.username, this.password);
       return this.user.accessToken;
-    } catch {
-      return this.user.accessToken;
+    } catch (err) {
+      console.error("Failed to refresh MirAIe token", err);
+      // Re-throw the error so that the caller (e.g., MQTT broker) knows the refresh failed
+      // and doesn't continue with a stale/invalid token.
+      throw err;
     }
   }
 

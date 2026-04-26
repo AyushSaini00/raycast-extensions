@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { addHours, addMinutes, format, formatDistance, getUnixTime } from "date-fns";
 import { Action, ActionPanel, Icon, showToast, Toast, Color, List } from "@raycast/api";
 import { Device, PowerMode, HVACMode, FanMode, PresetMode, SwingMode } from "./lib/miraie";
-import { SWING_MODE_LABELS } from "./lib/miraie/constants";
+import { MAX_TEMPERATURE, MIN_TEMPERATURE, SWING_MODE_LABELS } from "./lib/miraie/constants";
 
 interface DeviceDetailProps {
   device: Device;
@@ -14,7 +14,7 @@ interface Command {
   title: string;
   icon: Icon;
   action: () => Promise<void> | void;
-  successMessage: () => string | string;
+  successMessage: () => string;
 }
 
 interface CommandGroup {
@@ -115,15 +115,21 @@ export default function ControlDevice({ device, onRefresh }: DeviceDetailProps) 
           id: "increase-temp",
           title: "Increase Temperature",
           icon: Icon.Plus,
-          action: () => device.setTemperature(device.status.temperature + 1),
-          successMessage: () => `Temperature set to ${device.status.temperature + 1}°C`,
+          action: () => {
+            const nextTemp = Math.min(device.status.temperature + 1, MAX_TEMPERATURE);
+            device.setTemperature(nextTemp);
+          },
+          successMessage: () => `Temperature set to ${Math.min(device.status.temperature + 1, MAX_TEMPERATURE)}°C`,
         },
         {
           id: "decrease-temp",
           title: "Decrease Temperature",
           icon: Icon.Minus,
-          action: () => device.setTemperature(device.status.temperature - 1),
-          successMessage: () => `Temperature set to ${device.status.temperature - 1}°C`,
+          action: () => {
+            const nextTemp = Math.max(device.status.temperature - 1, MIN_TEMPERATURE);
+            device.setTemperature(nextTemp);
+          },
+          successMessage: () => `Temperature set to ${Math.max(device.status.temperature - 1, MIN_TEMPERATURE)}°C`,
         },
       ],
     },

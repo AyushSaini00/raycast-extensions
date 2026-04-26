@@ -15,6 +15,7 @@ export class MirAIeBroker {
   private statusCallbacks: Map<string, (data: unknown) => void> = new Map();
   private commandTopics: string[] = [];
   private connectionCallbacks: Set<(isConnected: boolean) => void> = new Set();
+  private errorCallbacks: Set<(error: Error) => void> = new Set();
   private reconnectAttempts = 0;
   private connectionCount = 0; // Track connection events
   client?: mqtt.MqttClient;
@@ -39,6 +40,20 @@ export class MirAIeBroker {
 
   removeConnectionCallback(callback: (isConnected: boolean) => void): void {
     this.connectionCallbacks.delete(callback);
+  }
+
+  registerErrorCallback(callback: (error: Error) => void): void {
+    this.errorCallbacks.add(callback);
+  }
+
+  removeErrorCallback(callback: (error: Error) => void): void {
+    this.errorCallbacks.delete(callback);
+  }
+
+  private notifyError(error: Error): void {
+    for (const callback of this.errorCallbacks) {
+      callback(error);
+    }
   }
 
   isConnected(): boolean {
@@ -137,6 +152,7 @@ export class MirAIeBroker {
           }
         } catch (tokenError) {
           console.error("Failed to refresh MirAIe MQTT token", tokenError);
+          this.notifyError(tokenError instanceof Error ? tokenError : new Error(String(tokenError)));
         }
       }
 

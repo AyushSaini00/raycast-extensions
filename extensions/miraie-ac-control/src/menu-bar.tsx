@@ -1,7 +1,7 @@
 import { MenuBarExtra, Icon, Color, showHUD, openExtensionPreferences } from "@raycast/api";
 import { useMirAIe } from "./hooks/useMiraie";
 import { Device, PowerMode, HVACMode, SwingMode } from "./lib/miraie";
-import { SWING_MODE_LABELS } from "./lib/miraie/constants";
+import { MAX_TEMPERATURE, MIN_TEMPERATURE, SWING_MODE_LABELS } from "./lib/miraie/constants";
 
 export default function Command() {
   const { devices, isLoading, refreshDevices, isConnected, error } = useMirAIe();
@@ -101,7 +101,7 @@ export default function Command() {
                       <MenuBarExtra.Item
                         title="+1°C"
                         onAction={async () => {
-                          const newTemp = device.status.temperature + 1;
+                          const newTemp = Math.min(device.status.temperature + 1, MAX_TEMPERATURE);
                           await device.setTemperature(newTemp);
                           await showHUD(`${device.friendlyName}: ${newTemp}°C`);
                         }}
@@ -109,7 +109,7 @@ export default function Command() {
                       <MenuBarExtra.Item
                         title="-1°C"
                         onAction={async () => {
-                          const newTemp = device.status.temperature - 1;
+                          const newTemp = Math.max(device.status.temperature - 1, MIN_TEMPERATURE);
                           await device.setTemperature(newTemp);
                           await showHUD(`${device.friendlyName}: ${newTemp}°C`);
                         }}

@@ -30,6 +30,7 @@ export function useMirAIe() {
   });
 
   const initCountRef = useRef(0);
+  const lastErrorToastTimeRef = useRef(0);
 
   const initialize = useCallback(
     async (forceRefresh = false) => {
@@ -171,10 +172,29 @@ export function useMirAIe() {
       }));
     };
 
+    const handleError = (error: Error) => {
+      const now = Date.now();
+      if (now - lastErrorToastTimeRef.current > 60000) {
+        showToast({
+          style: Toast.Style.Failure,
+          title: "MirAIe Connection Error",
+          message: error.message,
+        });
+        lastErrorToastTimeRef.current = now;
+      }
+
+      setState((prev) => ({
+        ...prev,
+        error: error.message,
+      }));
+    };
+
     state.broker.registerConnectionCallback(handleConnectionChange);
+    state.broker.registerErrorCallback(handleError);
 
     return () => {
       state.broker?.removeConnectionCallback(handleConnectionChange);
+      state.broker?.removeErrorCallback(handleError);
     };
   }, [state.broker]);
 

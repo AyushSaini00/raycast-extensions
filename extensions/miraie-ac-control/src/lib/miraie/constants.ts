@@ -42,3 +42,6 @@ export const SWING_MODE_LABELS = {
     [SwingMode.FIVE]: "Right",
   },
 } as const;
+
+export const MIN_TEMPERATURE = 16;
+export const MAX_TEMPERATURE = 30;
