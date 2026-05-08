@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { getPreferenceValues, showToast, Toast, LocalStorage } from "@raycast/api";
 import { MirAIeHub, MirAIeBroker, Device } from "../lib/miraie";
 import type { DeviceJSON } from "../lib/miraie/device";
@@ -19,7 +19,7 @@ let initializationPromise: Promise<void> | null = null;
 let isInitializing = false;
 
 export function useMirAIe() {
-  const preferences = useMemo(() => getPreferenceValues<Preferences>(), []);
+  const preferences = getPreferenceValues<Preferences>();
   const [state, setState] = useState<MirAIeState>({
     hub: sharedHub,
     broker: sharedBroker,
@@ -86,15 +86,20 @@ export function useMirAIe() {
 
       // If already initialized and not forcing refresh, just update state
       if (sharedHub && sharedBroker && !forceRefresh) {
-        setState({
-          hub: sharedHub,
-          broker: sharedBroker,
-          devices: sharedHub.home.devices,
-          isLoading: false,
-          error: null,
-          isConnected: sharedBroker.isConnected(),
-        });
-        return;
+        // If credentials have changed, we need to re-initialize everything
+        if (sharedHub.username !== preferences.username || sharedHub.password !== preferences.password) {
+          cleanupMirAIe();
+        } else {
+          setState({
+            hub: sharedHub,
+            broker: sharedBroker,
+            devices: sharedHub.home.devices,
+            isLoading: false,
+            error: null,
+            isConnected: sharedBroker.isConnected(),
+          });
+          return;
+        }
       }
 
       initCountRef.current++;

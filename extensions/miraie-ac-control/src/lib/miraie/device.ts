@@ -474,10 +474,12 @@ export class Device {
   }
 
   async setOffTimer(timerValue: number): Promise<void> {
+    if (!this.status) throw new Error("Device status is not available yet");
     await this.broker.setOffTimer(this.controlTopic, timerValue, [this.status.offTimer, this.status.onTimer]);
   }
 
   async setOnTimer(timerValue: number): Promise<void> {
+    if (!this.status) throw new Error("Device status is not available yet");
     await this.broker.setOnTimer(this.controlTopic, timerValue, [this.status.offTimer, this.status.onTimer]);
   }
 }
