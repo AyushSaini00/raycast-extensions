@@ -100,6 +100,24 @@ export class MirAIeHub {
     };
   }
 
+  private async request<T>(url: string, retry = true): Promise<T> {
+    const response = await fetch(url, {
+      headers: this.buildHeaders(),
+    });
+
+    if (response.status === 401 && retry) {
+      await this.getToken();
+      return this.request(url, false);
+    }
+
+    if (!response.ok) {
+      const errorBody = await response.text().catch(() => "Unknown error");
+      throw new Error(`MirAIe API request failed with status ${response.status}: ${errorBody}`);
+    }
+
+    return (await response.json()) as T;
+  }
+
   async init(username: string, password: string, broker: MirAIeBroker): Promise<void> {
     this._broker = broker;
 
@@ -171,15 +189,7 @@ export class MirAIeHub {
   }
 
   private async getDeviceDetails(deviceIds: string): Promise<DeviceDetailsResponse[]> {
-    const response = await fetch(constants.DEVICE_DETAILS_URL + "/" + deviceIds, {
-      headers: this.buildHeaders(),
-    });
-
-    try {
-      return (await response.json()) as DeviceDetailsResponse[];
-    } catch {
-      throw new Error("Unable to fetch device details");
-    }
+    return this.request<DeviceDetailsResponse[]>(constants.DEVICE_DETAILS_URL + "/" + deviceIds);
   }
 
   private async processHomeDetails(jsonData: HomeResponse): Promise<Home> {
@@ -253,10 +263,7 @@ export class MirAIeHub {
   }
 
   private async getHomeDetails(): Promise<void> {
-    const response = await fetch(constants.HOMES_URL, {
-      headers: this.buildHeaders(),
-    });
-    const resp = (await response.json()) as HomeResponse[];
+    const resp = await this.request<HomeResponse[]>(constants.HOMES_URL);
 
     if (!resp || resp.length === 0) {
       throw new Error("No homes found. Please ensure you have configured at least one home in the MirAIe mobile app.");
@@ -266,10 +273,7 @@ export class MirAIeHub {
   }
 
   private async getDeviceStatus(deviceId: string): Promise<DeviceStatusResponse> {
-    const response = await fetch(constants.STATUS_URL.replace("{deviceId}", deviceId), {
-      headers: this.buildHeaders(),
-    });
-    const resp = (await response.json()) as DeviceStatusResponse;
+    const resp = await this.request<DeviceStatusResponse>(constants.STATUS_URL.replace("{deviceId}", deviceId));
     resp.deviceId = deviceId;
     return resp;
   }
@@ -389,8 +393,7 @@ export class MirAIeHub {
       .replace("{toDate}", toDate);
 
     try {
-      const response = await fetch(url, { headers: this.buildHeaders() });
-      return (await response.json()) as EnergyConsumptionEntry[];
+      return await this.request<EnergyConsumptionEntry[]>(url);
     } catch (err) {
       console.error("Failed to fetch MirAIe energy details", err);
     }
