@@ -356,23 +356,30 @@ export default function ControlDevice({ device, onRefresh }: DeviceDetailProps) 
                       <List.Item.Detail.Metadata.Label title="Name" text={device.friendlyName} />
                       <List.Item.Detail.Metadata.Label title="Space" text={device.space.spaceName} />
                       <List.Item.Detail.Metadata.Label title="Id" text={device.id} />
-                      <List.Item.Detail.Metadata.Label title="Mac Address" text={device.details.macAddress} />
-                      <List.Item.Detail.Metadata.Label
-                        title="Firmware Version"
-                        text={device.details.firmwareVersion || "N/A"}
-                      />
-                      <List.Item.Detail.Metadata.Label
-                        title="Model Number"
-                        text={device.details.modelNumber || "N/A"}
-                      />
-                      <List.Item.Detail.Metadata.Label
-                        title="Serial Number"
-                        text={device.details.serialNumber || "N/A"}
-                      />
-                      <List.Item.Detail.Metadata.Label
-                        title="Model"
-                        text={device.details.productSerialNumber || "N/A"}
-                      />
+                      {device.details && (
+                        <>
+                          <List.Item.Detail.Metadata.Label
+                            title="Mac Address"
+                            text={device.details.macAddress || "N/A"}
+                          />
+                          <List.Item.Detail.Metadata.Label
+                            title="Firmware Version"
+                            text={device.details.firmwareVersion || "N/A"}
+                          />
+                          <List.Item.Detail.Metadata.Label
+                            title="Model Number"
+                            text={device.details.modelNumber || "N/A"}
+                          />
+                          <List.Item.Detail.Metadata.Label
+                            title="Serial Number"
+                            text={device.details.serialNumber || "N/A"}
+                          />
+                          <List.Item.Detail.Metadata.Label
+                            title="Model"
+                            text={device.details.productSerialNumber || "N/A"}
+                          />
+                        </>
+                      )}
                     </List.Item.Detail.Metadata>
                   }
                 />
